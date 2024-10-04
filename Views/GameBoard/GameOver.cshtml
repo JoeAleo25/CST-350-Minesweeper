@@ -1,0 +1,16 @@
+﻿@{
+    ViewData["Title"] = "Game Over";
+}
+
+<div class="alert alert-danger text-center">
+    <h2>Game Over!</h2>
+    <p>Your game has been saved.</p>
+
+    <!-- Start New Game Button -->
+    <form asp-action="StartGame" method="post">
+        <button type="submit" class="btn btn-primary">Start New Game</button>
+    </form>
+
+    <!-- View Saved Games Button -->
+    <a asp-action="ShowSavedGames" class="btn btn-secondary">View Saved Games</a>
+</div>

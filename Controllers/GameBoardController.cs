@@ -1,17 +1,19 @@
 ﻿using CST350_Minesweeper.Models;
+using CST350_Minesweeper.Services;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
+using Newtonsoft.Json;
 
 public class GameBoardController : Controller
 {
     private static GameBoard gameBoard;
     private static bool gameOver = false;
-    private static Stopwatch stopwatch = new Stopwatch();
     private readonly GameService _gameService;
+    private readonly SavedGameDAO _savedGameDAO;
 
-    public GameBoardController(GameService gameService)
+    public GameBoardController(GameService gameService, SavedGameDAO savedGameDAO)
     {
         _gameService = gameService;
+        _savedGameDAO = savedGameDAO;
     }
 
     public IActionResult Index()
@@ -20,13 +22,9 @@ public class GameBoardController : Controller
         {
             gameBoard = _gameService.CreateGameBoard(10, 10, 20);
             gameOver = false;
-            stopwatch.Reset();
-            stopwatch.Start();
         }
 
-        ViewData["ElapsedTime"] = stopwatch.IsRunning ? stopwatch.Elapsed.ToString(@"mm\:ss") : "00:00";
         ViewData["GameOver"] = gameOver;
-        ViewData["CanPlay"] = !gameOver;
         return View(gameBoard);
     }
 
@@ -38,8 +36,9 @@ public class GameBoardController : Controller
             _gameService.RevealCell(gameBoard, row, column);
             if (gameBoard.GameOver)
             {
-                stopwatch.Stop();
-                return PartialView("_GameOver", gameBoard);
+                gameOver = true;
+                SaveGame();  // Automatically save the game when it ends
+                return RedirectToAction("GameOver");
             }
         }
         return PartialView("_GameBoard", gameBoard);
@@ -60,9 +59,47 @@ public class GameBoardController : Controller
     {
         gameBoard = _gameService.CreateGameBoard(10, 10, 20);
         gameOver = false;
-        stopwatch.Reset();
-        stopwatch.Start();
-
         return RedirectToAction("Index");
+    }
+
+    [HttpPost]
+    public IActionResult SaveGame()
+    {
+        var userId = 1;  // Replace with actual user ID logic
+        var gameData = JsonConvert.SerializeObject(gameBoard);
+
+        var savedGame = new SavedGame
+        {
+            UserId = userId,
+            SaveTime = DateTime.Now,
+            GameData = gameData
+        };
+
+        _savedGameDAO.SaveGame(savedGame);
+        return RedirectToAction("Index");
+    }
+
+    public IActionResult LoadGame(int id)
+    {
+        var savedGame = _savedGameDAO.GetSavedGame(id);
+        if (savedGame != null)
+        {
+            gameBoard = JsonConvert.DeserializeObject<GameBoard>(savedGame.GameData);
+            gameOver = false;
+            return RedirectToAction("Index");
+        }
+        return NotFound();
+    }
+
+    public IActionResult ShowSavedGames()
+    {
+        var userId = 1;  // Replace with actual user ID logic
+        var savedGames = _savedGameDAO.GetSavedGames(userId);
+        return View(savedGames);
+    }
+
+    public IActionResult GameOver()
+    {
+        return View();
     }
 }

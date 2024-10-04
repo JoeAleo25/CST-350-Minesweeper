@@ -1,0 +1,24 @@
+﻿@model IEnumerable<CST350_Minesweeper.Models.SavedGame>
+
+<h4>Saved Games</h4>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Save Time</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var game in Model)
+        {
+            <tr>
+                <td>@game.SaveTime</td>
+                <td>
+                    <a asp-action="LoadGame" asp-route-id="@game.Id">Load</a>
+                    |
+                    <a asp-action="DeleteSavedGame" asp-route-id="@game.Id">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
